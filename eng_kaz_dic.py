@@ -1,3 +1,17 @@
+def translate_with_dic(word: str, direction:str) -> str:
+    if direction == "eng-kaz":
+        if word in eng_4_eng_kaz:
+            return kaz_4_eng_kaz[eng_4_eng_kaz.index(word)]
+        else:
+            return "unknown_word"
+    elif direction == "kaz-eng":
+        if word in kaz_4_eng_kaz:
+            return eng_4_eng_kaz[kaz_4_eng_kaz.index(word)]
+        else:
+            return "unknown_word"
+    else:
+        raise ValueError("Wrong direction of translation")
+
 eng_4_eng_kaz = [
 "go",
 "about",
