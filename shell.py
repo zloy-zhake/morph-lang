@@ -1,6 +1,7 @@
 import sys
 import sh
 import re
+import os
 import os.path
 from eng_kaz_dic import eng_4_eng_kaz
 from eng_kaz_dic import kaz_4_eng_kaz
@@ -45,15 +46,14 @@ for source_text_line in sys.stdin:
 
     # разделяем слова и теги
     for i in range(len(words_and_tags)):
-
-        # добавляем пробел перед тегами для split
-        words_and_tags[i] = re.sub(
-            pattern="<", repl=" <", string=words_and_tags[i], count=1
-        )
-
         # делаем split
-        words_and_tags[i] = words_and_tags[i].split(maxsplit=1)
+        words_and_tags[i] = words_and_tags[i].split(sep="<", maxsplit=1)
 
+    # Восстанавливаем удаленную скобку
+    for i in range(len(words_and_tags)):
+        words_and_tags[i][1] = "<" + words_and_tags[i][1]
+
+    # print(words_and_tags)
     # ==========
     # перевести слова по словарю
     # ==========
@@ -82,30 +82,25 @@ for source_text_line in sys.stdin:
     f = open(file="/tmp/input_infer", mode="w")
     f.close()
 
+    # создать файл /tmp/output_infer
+    # очищаем файл /tmp/output_infer
+    f = open(file="/tmp/output_infer", mode="w")
+    f.close()
+
     # добавляем новые данные
     for i in range(len(words_and_tags)):
         with open(file="/tmp/input_infer", mode="a") as input_inference_file:
             print(words_and_tags[i][1], file=input_inference_file)
 
-        # сделать inference
+    # сделать inference
+    sh.bash("-c", "./inference.sh")
 
-        # python -m nmt.nmt \
-        # --out_dir=PATH_TO_MORPH_LANG_NMT_MODEL \
-        # --inference_input_file=/tmp/input_infer \
-        # --inference_output_file=/tmp/output_infer
-
-    print(
-        "Please, run the inference from '/tmp/input_infer' manually now, and create \
-        resulting file '/tmp/output_infer_2' when ready"
-    )
-    while not os.path.isfile("/tmp/output_infer2"):
-        pass
-
-    # прочитать файл /tmp/output_infer2
-    with open(file="/tmp/output_infer2", mode="r") as output_inference_file:
+    # прочитать файл /tmp/output_infer
+    with open(file="/tmp/output_infer", mode="r") as output_inference_file:
         for i in range(len(words_and_tags)):
             line = output_inference_file.readline()
             words_and_tags[i][1] = line
+
 
     # очистить ненужные символы "\n"
     for i in range(len(words_and_tags)):
@@ -119,8 +114,6 @@ for source_text_line in sys.stdin:
     for i in range(len(words_and_tags)):
         words_and_tags[i][1] = re.sub(pattern=" ", repl="", string=words_and_tags[i][1])
 
-    # print(words_and_tags)
-
     # ==========
     # объединить перевод слов и выведенных тегов
     # ==========
@@ -129,7 +122,7 @@ for source_text_line in sys.stdin:
         morph_lang_tl += "^"
         morph_lang_tl += words_and_tags[i][0]
         morph_lang_tl += words_and_tags[i][1]
-        morph_lang_tl += "$"
+        morph_lang_tl += "$ "
 
     # ==========
     # сделать морфологическую генерацию
