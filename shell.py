@@ -30,6 +30,10 @@ for source_text_line in sys.stdin:
         )
     )
 
+    # весь текст в нижний регистр, так как словарь в нижнем регистре
+    # до морфологического анализа делать не стоит, так как для него регистр важен
+    morph_lang_sl = morph_lang_sl.lower()
+
     # ==========
     # разделить теги и слова
     # ==========
@@ -37,7 +41,7 @@ for source_text_line in sys.stdin:
     # "очистка", чтобы слова разделялись только "$^"
     morph_lang_sl = re.sub(pattern="\$.+?\^", repl="$^", string=morph_lang_sl)
 
-    # удаляем первый символ "^" и последний символ "$"
+    # удаляем пробелы по краям, первый символ "^" и последний символ "$"
     morph_lang_sl = morph_lang_sl.strip()
     morph_lang_sl = morph_lang_sl[1:-1]
 
@@ -47,7 +51,10 @@ for source_text_line in sys.stdin:
     # разделяем слова и теги
     for i in range(len(words_and_tags)):
         # делаем split
+        # у слов со * нет анализов, поэтому им назначаем тег <unk>
         words_and_tags[i] = words_and_tags[i].split(sep="<", maxsplit=1)
+        if len(words_and_tags[i]) == 1:
+            words_and_tags[i].append("<unk>")
 
     # Восстанавливаем удаленную скобку
     for i in range(len(words_and_tags)):
@@ -101,7 +108,6 @@ for source_text_line in sys.stdin:
             line = output_inference_file.readline()
             words_and_tags[i][1] = line
 
-
     # очистить ненужные символы "\n"
     for i in range(len(words_and_tags)):
         words_and_tags[i][1] = re.sub(
@@ -147,8 +153,11 @@ for source_text_line in sys.stdin:
             )
         )
 
+    # Очистить результат от диагностических символов Apertium
+    target_text_line = re.sub(pattern="#|\*|@|~", repl="", string=target_text_line)
+
     # ==========
     # вывести результат на stdout
     # ==========
 
-    print(target_text_line)
+    print(target_text_line, end="")
